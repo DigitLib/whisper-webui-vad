@@ -46,10 +46,16 @@ def _perform_download(url: str, maxDuration: int = None, outputTemplate: str = N
     with YoutubeDL(ydl_opts) as ydl:
         if maxDuration and maxDuration > 0:
             info = ydl.extract_info(url, download=False)
-            duration = info['duration']
+            entries = "entries" in info and info["entries"] or [info]
 
-            if duration >= maxDuration:
-                raise ExceededMaximumDuration(videoDuration=duration, maxDuration=maxDuration, message="Video is too long")
+            total_duration = 0
+
+            # Compute total duration
+            for entry in entries:
+                total_duration += float(entry["duration"])
+
+            if total_duration >= maxDuration:
+                raise ExceededMaximumDuration(videoDuration=total_duration, maxDuration=maxDuration, message="Video is too long")
 
         ydl.add_post_processor(filename_collector)
         ydl.download([url])
