@@ -90,7 +90,7 @@ class ParallelTranscription(AbstractTranscription):
         total_duration = get_audio_duration(audio)
 
         # First, get the timestamps for the original audio
-        if (cpu_device_count > 1):
+        if (cpu_device_count > 1 and not transcription.is_transcribe_timestamps_fast()):
             merged = self._get_merged_timestamps_parallel(transcription, audio, config, total_duration, cpu_device_count, cpu_parallel_context)
         else:
             timestamp_segments = transcription.get_transcribe_timestamps(audio, config, 0, total_duration)
