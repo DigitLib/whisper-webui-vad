@@ -96,6 +96,10 @@ class ParallelTranscription(AbstractTranscription):
             timestamp_segments = transcription.get_transcribe_timestamps(audio, config, 0, total_duration)
             merged = transcription.get_merged_timestamps(timestamp_segments, config, total_duration)
 
+        # We must make sure the whisper model is downloaded
+        if (len(gpu_devices) > 1):
+            whisperCallable.model_container.ensure_downloaded()
+            
         # Split into a list for each device
         # TODO: Split by time instead of by number of chunks
         merged_split = list(self._split(merged, len(gpu_devices)))
