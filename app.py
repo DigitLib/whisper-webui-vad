@@ -1,3 +1,4 @@
+from datetime import datetime
 import math
 from typing import Iterator
 import argparse
@@ -6,9 +7,11 @@ from io import StringIO
 import os
 import pathlib
 import tempfile
+import zipfile
 
 import torch
 from src.modelCache import ModelCache
+from src.source import get_audio_source_collection
 from src.vadParallel import ParallelContext, ParallelTranscription
 
 # External programs
@@ -78,9 +81,9 @@ class WhisperTranscriber:
             self.vad_cpu_cores = min(os.cpu_count(), MAX_AUTO_CPU_CORES)
             print("[Auto parallel] Using GPU devices " + str(self.parallel_device_list) + " and " + str(self.vad_cpu_cores) + " CPU cores for VAD/transcription.")
 
-    def transcribe_webui(self, modelName, languageName, urlData, uploadFile, microphoneData, task, vad, vadMergeWindow, vadMaxMergeSize, vadPadding, vadPromptWindow):
+    def transcribe_webui(self, modelName, languageName, urlData, multipleFile, microphoneData, task, vad, vadMergeWindow, vadMaxMergeSize, vadPadding, vadPromptWindow):
         try:
-            source, sourceName = self.__get_source(urlData, uploadFile, microphoneData)
+            sources = self.__get_source(urlData, multipleFile, microphoneData)
             
             try:
                 selectedLanguage = languageName.lower() if len(languageName) > 0 else None
@@ -88,22 +91,85 @@ class WhisperTranscriber:
 
                 model = WhisperContainer(model_name=selectedModel, cache=self.model_cache)
 
-                # Execute whisper
-                result = self.transcribe_file(model, source, selectedLanguage, task, vad, vadMergeWindow, vadMaxMergeSize, vadPadding, vadPromptWindow)
-
+               # Result
+                download = []
+                zip_file_lookup = {}
+                text = ""
+                vtt = ""
+                
                 # Write result
                 downloadDirectory = tempfile.mkdtemp()
                 
-                filePrefix = slugify(sourceName, allow_unicode=True)
-                download, text, vtt = self.write_result(result, filePrefix, downloadDirectory)
+                source_index = 0
+
+                # Execute whisper
+                for source in sources:
+                    source_prefix = ""
+
+                    if (len(sources) > 1):
+                        # Prefix (minimum 2 digits)
+                        source_index += 1
+                        source_prefix = str(source_index).zfill(2) + "_"
+                        print("Transcribing ", source.source_path)
+
+                    # Transcribe
+                    result = self.transcribe_file(model, source.source_path, selectedLanguage, task, vad, vadMergeWindow, vadMaxMergeSize, vadPadding, vadPromptWindow)
+                    filePrefix = slugify(source_prefix + source.get_short_name(), allow_unicode=True)
+
+                    source_download, source_text, source_vtt = self.write_result(result, filePrefix, downloadDirectory)
+
+                    if len(sources) > 1:
+                        # Add new line separators
+                        if (len(source_text) > 0):
+                            source_text += os.linesep + os.linesep
+                        if (len(source_vtt) > 0):
+                            source_vtt += os.linesep + os.linesep
+
+                        # Append file name to source text too
+                        source_text = source.get_full_name() + ":" + os.linesep + source_text
+                        source_vtt = source.get_full_name() + ":" + os.linesep + source_vtt
+
+                    # Add to result
+                    download.extend(source_download)
+                    text += source_text
+                    vtt += source_vtt
+
+                    if (len(sources) > 1):
+                        # Zip files support at least 260 characters, but we'll play it safe and use 200
+                        zipFilePrefix = slugify(source_prefix + source.get_short_name(max_length=200), allow_unicode=True)
+
+                        # File names in ZIP file can be longer
+                        for source_download_file in source_download:
+                            # Get file postfix (after last -)
+                            filePostfix = os.path.basename(source_download_file).split("-")[-1]
+                            zip_file_name = zipFilePrefix + "-" + filePostfix
+                            zip_file_lookup[source_download_file] = zip_file_name
+
+                # Create zip file from all sources
+                if len(sources) > 1:
+                    downloadAllPath = os.path.join(downloadDirectory, "All_Output-" + datetime.now().strftime("%Y%m%d-%H%M%S") + ".zip")
+
+                    with zipfile.ZipFile(downloadAllPath, 'w', zipfile.ZIP_DEFLATED) as zip:
+                        for download_file in download:
+                            # Get file name from lookup
+                            zip_file_name = zip_file_lookup.get(download_file, os.path.basename(download_file))
+                            zip.write(download_file, arcname=zip_file_name)
+
+                    download.insert(0, downloadAllPath)
 
                 return download, text, vtt
 
             finally:
                 # Cleanup source
                 if self.deleteUploadedFiles:
-                    print("Deleting source file " + source)
-                    os.remove(source)
+                    for source in sources:
+                        print("Deleting source file " + source.source_path)
+
+                        try:
+                            os.remove(source.source_path)
+                        except Exception as e:
+                            # Ignore error - it's just a cleanup
+                            print("Error deleting source file " + source.source_path + ": " + str(e))
         
         except ExceededMaximumDuration as e:
             return [], ("[ERROR]: Maximum remote video length is " + str(e.maxDuration) + "s, file was " + str(e.videoDuration) + "s"), "[ERROR]"
@@ -222,25 +288,8 @@ class WhisperTranscriber:
         self.model_cache.clear()
         self.vad_model = None
 
-    def __get_source(self, urlData, uploadFile, microphoneData):
-        if urlData:
-            # Download from YouTube
-            source = download_url(urlData, self.inputAudioMaxDuration)[0]
-        else:
-            # File input
-            source = uploadFile if uploadFile is not None else microphoneData
-
-            if self.inputAudioMaxDuration > 0:
-                # Calculate audio length
-                audioDuration = ffmpeg.probe(source)["format"]["duration"]
-            
-                if float(audioDuration) > self.inputAudioMaxDuration:
-                    raise ExceededMaximumDuration(videoDuration=audioDuration, maxDuration=self.inputAudioMaxDuration, message="Video is too long")
-
-        file_path = pathlib.Path(source)
-        sourceName = file_path.stem[:MAX_FILE_PREFIX_LENGTH] + file_path.suffix
-
-        return source, sourceName
+    def __get_source(self, urlData, multipleFiles, microphoneData):
+        return get_audio_source_collection(urlData, multipleFiles, microphoneData, self.inputAudioMaxDuration)
 
     def __get_max_line_width(self, language: str) -> int:
         if (language and language.lower() in ["japanese", "ja", "chinese", "zh"]):
@@ -303,7 +352,7 @@ def create_ui(input_audio_max_duration, share=False, server_name: str = None, se
         gr.Dropdown(choices=["tiny", "base", "small", "medium", "large"], value=default_model_name, label="Model"),
         gr.Dropdown(choices=sorted(LANGUAGES), label="Language"),
         gr.Text(label="URL (YouTube, etc.)"),
-        gr.Audio(source="upload", type="filepath", label="Upload Audio"), 
+        gr.File(label="Upload Files", file_count="multiple"),
         gr.Audio(source="microphone", type="filepath", label="Microphone Input"),
         gr.Dropdown(choices=["transcribe", "translate"], label="Task"),
         gr.Dropdown(choices=["none", "silero-vad", "silero-vad-skip-gaps", "silero-vad-expand-into-gaps", "periodic-vad"], value=default_vad, label="VAD"),
