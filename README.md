@@ -47,6 +47,12 @@ In addition, you may also use URL's in addition to file paths as input.
 python cli.py --model large --vad silero-vad --language Japanese "https://www.youtube.com/watch?v=4cICErqqRSM"
 ```
 
+## Google Colab
+
+You can also run this Web UI directly on [Google Colab](https://colab.research.google.com/drive/1qeTSvi7Bt_5RMm88ipW4fkcsMOKlDDss?usp=sharing), if you haven't got a GPU powerful enough to run the larger models.
+
+See the [colab documentation](docs/colab.md) for more information.
+
 ## Parallel Execution
 
 You can also run both the Web-UI or the CLI on multiple GPUs in parallel, using the `vad_parallel_devices` option. This takes a comma-delimited list of 
