@@ -349,7 +349,7 @@ def create_ui(input_audio_max_duration, share=False, server_name: str = None, se
     ui_article = "Read the [documentation here](https://huggingface.co/spaces/aadnk/whisper-webui/blob/main/docs/options.md)"
 
     demo = gr.Interface(fn=ui.transcribe_webui, description=ui_description, article=ui_article, inputs=[
-        gr.Dropdown(choices=["tiny", "base", "small", "medium", "large"], value=default_model_name, label="Model"),
+        gr.Dropdown(choices=["tiny", "base", "small", "medium", "large", "large-v1", "large-v2"], value=default_model_name, label="Model"),
         gr.Dropdown(choices=sorted(LANGUAGES), label="Language"),
         gr.Text(label="URL (YouTube, etc.)"),
         gr.File(label="Upload Files", file_count="multiple"),
