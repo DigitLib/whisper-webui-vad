@@ -1,7 +1,7 @@
 git+https://github.com/ProjectEGU/whisper-for-low-vram.git
 transformers
 ffmpeg-python==0.2.0
-gradio
+gradio==3.13.0
 yt-dlp
 torchaudio
 altair
