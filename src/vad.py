@@ -77,6 +77,12 @@ class AbstractTranscription(ABC):
     def get_audio_segment(self, str, start_time: str = None, duration: str = None):
         return load_audio(str, self.sampling_rate, start_time, duration)
 
+    def is_transcribe_timestamps_fast(self):
+        """
+        Determine if get_transcribe_timestamps is fast enough to not need parallelization.
+        """
+        return False
+    
     @abstractmethod
     def get_transcribe_timestamps(self, audio: str, config: TranscriptionConfig, start_time: float, end_time: float):
         """
@@ -462,6 +468,10 @@ class VadPeriodicTranscription(AbstractTranscription):
     def __init__(self, sampling_rate: int = 16000):
         super().__init__(sampling_rate=sampling_rate)
 
+    def is_transcribe_timestamps_fast(self):
+        # This is a very fast VAD - no need to parallelize it
+        return True
+    
     def get_transcribe_timestamps(self, audio: str, config: PeriodicTranscriptionConfig, start_time: float, end_time: float):
         result = []
 
