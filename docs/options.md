@@ -3,18 +3,21 @@ To transcribe or translate an audio file, you can either copy an URL from a webs
 supported by YT-DLP will work, including YouTube). Otherwise, upload an audio file (choose "All Files (*.*)" 
 in the file selector to select any file type, including video files) or use the microphone.
 
-For longer audio files (>10 minutes), it is recommended that you select Silero VAD (Voice Activity Detector) in the VAD option.
+For longer audio files (>10 minutes), it is recommended that you select Silero VAD (Voice Activity Detector) in the VAD option, especially if you are using the `large-v1` model. Note that `large-v2` is a lot more forgiving, but you may still want to use a VAD with a slightly higher "VAD - Max Merge Size (s)" (60 seconds or more).
 
 ## Model
 Select the model that Whisper will use to transcribe the audio:
 
-| Size   | Parameters | English-only model | Multilingual model | Required VRAM | Relative speed |
-|--------|------------|--------------------|--------------------|---------------|----------------|
-| tiny   | 39 M       | tiny.en            | tiny               | ~1 GB         | ~32x           |
-| base   | 74 M       | base.en            | base               | ~1 GB         | ~16x           |
-| small  | 244 M      | small.en           | small              | ~2 GB         | ~6x            |
-| medium | 769 M      | medium.en          | medium             | ~5 GB         | ~2x            |
-| large  | 1550 M     | N/A                | large              | ~10 GB        | 1x             |
+| Size      | Parameters | English-only model | Multilingual model | Required VRAM | Relative speed |
+|-----------|------------|--------------------|--------------------|---------------|----------------|
+| tiny      | 39 M       | tiny.en            | tiny               | ~1 GB         | ~32x           |
+| base      | 74 M       | base.en            | base               | ~1 GB         | ~16x           |
+| small     | 244 M      | small.en           | small              | ~2 GB         | ~6x            |
+| medium    | 769 M      | medium.en          | medium             | ~5 GB         | ~2x            |
+| large     | 1550 M     | N/A                | large              | ~10 GB        | 1x             |
+| large-v2  | 1550 M     | N/A                | large              | ~10 GB        | 1x             |
+
+Note: Using adopted version Large models works on 8Gb GPU-s
 
 ## Language
 
@@ -24,10 +27,12 @@ Note that if the selected language and the language in the audio differs, Whispe
 language. For instance, if the audio is in English but you select Japaneese, the model may translate the audio to Japanese.
 
 ## Inputs
-The options "URL (YouTube, etc.)", "Upload Audio" or "Micriphone Input" allows you to send an audio input to the model.
+The options "URL (YouTube, etc.)", "Upload Files" or "Microphone Input" allows you to send an audio input to the model.
 
-Note that the UI will only process the first valid input - i.e. if you enter both an URL and upload an audio, it will only process 
-the URL. 
+### Multiple Files
+Note that the UI will only process either the given URL or the upload files (including microphone) - not both. 
+
+But you can upload multiple files either through the "Upload files" option, or as a playlist on YouTube. Each audio file will then be processed in turn, and the resulting SRT/VTT/Transcript will be made available in the "Download" section. When more than one file is processed, the UI will also generate a "All_Output" zip file containing all the text output files.
 
 ## Task
 Select the task - either "transcribe" to transcribe the audio to text, or "translate" to translate it to English.
@@ -76,3 +81,8 @@ number of seconds after the line has finished. For instance, if a line ends at 1
 
 Note that detected lines in gaps between speech sections will not be included in the prompt 
 (if silero-vad or silero-vad-expand-into-gaps) is used.
+
+# Command Line Options
+
+Both `app.py` and `cli.py` also accept command line options, such as the ability to enable parallel execution on multiple
+CPU/GPU cores, the default model name/VAD and so on. Consult the README in the root folder for more information.
