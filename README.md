@@ -3,6 +3,7 @@
 This is the fork from:\
 https://huggingface.co/spaces/aadnk/whisper-webui (Code and Demo)\
 https://gitlab.com/aadnk/whisper-webui/-/blob/main/README.md Readme (Gitlab) 
+Note: Original Commit is from this GitLab repo.
 
 Found on https://github.com/openai/whisper/discussions/397
 
@@ -81,6 +82,13 @@ cores (up to 8):
 python app.py --input_audio_max_duration -1 --auto_parallel True
 ```
 
+### Multiple Files
+
+You can upload multiple files either through the "Upload files" option, or as a playlist on YouTube. 
+Each audio file will then be processed in turn, and the resulting SRT/VTT/Transcript will be made available in the "Download" section. 
+When more than one file is processed, the UI will also generate a "All_Output" zip file containing all the text output files
+
+
 # Docker
 
 To run it in Docker, first install Docker and optionally the NVIDIA Container Toolkit in order to use the GPU. 
@@ -117,7 +125,7 @@ You can also pass custom arguments to `app.py` in the Docker container, for inst
 ```
 docker run -d --gpus all -p 7860:7860 \
 --mount type=bind,source=/home/administrator/.cache/whisper,target=/root/.cache/whisper \
---restart=on-failure:15 rwhisper-webui:1 \ app.py --input_audio_max_duration -1 --server_name 0.0.0.0 --vad_parallel_devices 0,1 \
+--restart=on-failure:15 rwhisper-webui:1 \ app.py --input_audio_max_duration -1 --server_name 0.0.0.0 --auto_parallel True \
 --default_vad silero-vad --default_model_name large
 ```
 
@@ -126,7 +134,7 @@ You can also call `cli.py` the same way:
 docker run --gpus all \
 --mount type=bind,source=/home/administrator/.cache/whisper,target=/root/.cache/whisper \
 --mount type=bind,source=${PWD},target=/app/data \ whisper-webui:1 \
-cli.py --model large --vad_parallel_devices 0,1 --vad silero-vad \
+cli.py --model large --auto_parallel True --vad silero-vad \
 --output_dir /app/data /app/data/YOUR-FILE-HERE.mp4
 ```
 
