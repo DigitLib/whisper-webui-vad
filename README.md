@@ -3,7 +3,8 @@
 This is the fork from:\
 https://huggingface.co/spaces/aadnk/whisper-webui (Code and Demo)\
 https://gitlab.com/aadnk/whisper-webui/-/blob/main/README.md Readme (Gitlab)\
-Note: Original Commits are from this GitLab repo.
+
+Note: Original Commits are from GitLab repo https://gitlab.com/aadnk/whisper-webui/-/commits/main
 
 Found on https://github.com/openai/whisper/discussions/397
 
