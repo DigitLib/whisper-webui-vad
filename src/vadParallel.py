@@ -104,12 +104,11 @@ class ParallelTranscription(AbstractTranscription):
         parameters = []
         segment_index = config.initial_segment_index
 
-        for i in range(len(merged_split)):
-            device_segment_list = list(merged_split[i])
+        for i in range(len(gpu_devices)):
+            # Note that device_segment_list can be empty. But we will still create a process for it,
+            # as otherwise we run the risk of assigning the same device to multiple processes.
+            device_segment_list = list(merged_split[i]) if i < len(merged_split) else []
             device_id = gpu_devices[i]
-
-            if (len(device_segment_list) <= 0):
-                continue
 
             print("Device " + str(device_id) + " (index " + str(i) + ") has " + str(len(device_segment_list)) + " segments")
 
