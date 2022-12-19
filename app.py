@@ -60,7 +60,8 @@ LANGUAGES = [
 WHISPER_MODELS = ["tiny", "base", "small", "medium", "large", "large-v1", "large-v2"]
 
 class WhisperTranscriber:
-    def __init__(self, input_audio_max_duration: float = DEFAULT_INPUT_AUDIO_MAX_DURATION, vad_process_timeout: float = None, vad_cpu_cores: int = 1, delete_uploaded_files: bool = DELETE_UPLOADED_FILES):
+    def __init__(self, input_audio_max_duration: float = DEFAULT_INPUT_AUDIO_MAX_DURATION, vad_process_timeout: float = None,
+                 vad_cpu_cores: int = 1, delete_uploaded_files: bool = DELETE_UPLOADED_FILES, output_dir: str = None):
         self.model_cache = ModelCache()
         self.parallel_device_list = None
         self.gpu_parallel_context = None
@@ -104,6 +105,8 @@ class WhisperTranscriber:
                 
                 source_index = 0
 
+                outputDirectory = self.output_dir if self.output_dir is not None else downloadDirectory
+                
                 # Execute whisper
                 for source in sources:
                     source_prefix = ""
@@ -118,7 +121,7 @@ class WhisperTranscriber:
                     result = self.transcribe_file(model, source.source_path, selectedLanguage, task, vad, vadMergeWindow, vadMaxMergeSize, vadPadding, vadPromptWindow)
                     filePrefix = slugify(source_prefix + source.get_short_name(), allow_unicode=True)
 
-                    source_download, source_text, source_vtt = self.write_result(result, filePrefix, downloadDirectory)
+                    source_download, source_text, source_vtt = self.write_result(result, filePrefix, outputDirectory)
 
                     if len(sources) > 1:
                         # Add new line separators
@@ -332,8 +335,10 @@ class WhisperTranscriber:
 
 
 def create_ui(input_audio_max_duration, share=False, server_name: str = None, server_port: int = 7860, 
-              default_model_name: str = "medium", default_vad: str = None, vad_parallel_devices: str = None, vad_process_timeout: float = None, vad_cpu_cores: int = 1, auto_parallel: bool = False):
-    ui = WhisperTranscriber(input_audio_max_duration, vad_process_timeout, vad_cpu_cores)
+              default_model_name: str = "medium", default_vad: str = None,vad_parallel_devices: str = None,
+              vad_process_timeout: float = None, vad_cpu_cores: int = 1, auto_parallel: bool = False
+              output_dir: str = None):
+    ui = WhisperTranscriber(input_audio_max_duration, vad_process_timeout, vad_cpu_cores, DELETE_UPLOADED_FILES, output_dir)
 
     # Specify a list of devices to use for parallel processing
     ui.set_parallel_devices(vad_parallel_devices)
@@ -385,6 +390,7 @@ if __name__ == '__main__':
     parser.add_argument("--vad_cpu_cores", type=int, default=1, help="The number of CPU cores to use for VAD pre-processing.")
     parser.add_argument("--vad_process_timeout", type=float, default="1800", help="The number of seconds before inactivate processes are terminated. Use 0 to close processes immediately, or None for no timeout.")
     parser.add_argument("--auto_parallel", type=bool, default=False, help="True to use all available GPUs and CPU cores for processing. Use vad_cpu_cores/vad_parallel_devices to specify the number of CPU cores/GPUs to use.")
+    parser.add_argument("--output_dir", "-o", type=str, default=None, help="directory to save the outputs")
 
     args = parser.parse_args().__dict__
     create_ui(**args)
