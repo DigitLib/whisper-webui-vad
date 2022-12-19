@@ -93,7 +93,8 @@ class ParallelTranscription(AbstractTranscription):
         if (cpu_device_count > 1):
             merged = self._get_merged_timestamps_parallel(transcription, audio, config, total_duration, cpu_device_count, cpu_parallel_context)
         else:
-            merged = transcription.get_merged_timestamps(audio, config, total_duration)
+            timestamp_segments = transcription.get_transcribe_timestamps(audio, config, 0, total_duration)
+            merged = transcription.get_merged_timestamps(timestamp_segments, config, total_duration)
 
         # Split into a list for each device
         # TODO: Split by time instead of by number of chunks
