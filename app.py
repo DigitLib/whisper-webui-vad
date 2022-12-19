@@ -57,6 +57,8 @@ LANGUAGES = [
  "Hausa", "Bashkir", "Javanese", "Sundanese"
 ]
 
+WHISPER_MODELS = ["tiny", "base", "small", "medium", "large", "large-v1", "large-v2"]
+
 class WhisperTranscriber:
     def __init__(self, input_audio_max_duration: float = DEFAULT_INPUT_AUDIO_MAX_DURATION, vad_process_timeout: float = None, vad_cpu_cores: int = 1, delete_uploaded_files: bool = DELETE_UPLOADED_FILES):
         self.model_cache = ModelCache()
@@ -349,7 +351,7 @@ def create_ui(input_audio_max_duration, share=False, server_name: str = None, se
     ui_article = "Read the [documentation here](https://huggingface.co/spaces/aadnk/whisper-webui/blob/main/docs/options.md)"
 
     demo = gr.Interface(fn=ui.transcribe_webui, description=ui_description, article=ui_article, inputs=[
-        gr.Dropdown(choices=["tiny", "base", "small", "medium", "large", "large-v1", "large-v2"], value=default_model_name, label="Model"),
+        gr.Dropdown(choices=WHISPER_MODELS, value=default_model_name, label="Model"),
         gr.Dropdown(choices=sorted(LANGUAGES), label="Language"),
         gr.Text(label="URL (YouTube, etc.)"),
         gr.File(label="Upload Files", file_count="multiple"),
@@ -377,7 +379,7 @@ if __name__ == '__main__':
     parser.add_argument("--share", type=bool, default=False, help="True to share the app on HuggingFace.")
     parser.add_argument("--server_name", type=str, default=None, help="The host or IP to bind to. If None, bind to localhost.")
     parser.add_argument("--server_port", type=int, default=7860, help="The port to bind to.")
-    parser.add_argument("--default_model_name", type=str, default="medium", help="The default model name.")
+    parser.add_argument("--default_model_name", type=str, choises=WHISPER_MODELS, default="medium", help="The default model name.")
     parser.add_argument("--default_vad", type=str, default="silero-vad", help="The default VAD.")
     parser.add_argument("--vad_parallel_devices", type=str, default="", help="A commma delimited list of CUDA devices to use for parallel processing. If None, disable parallel processing.")
     parser.add_argument("--vad_cpu_cores", type=int, default=1, help="The number of CPU cores to use for VAD pre-processing.")
