@@ -348,7 +348,7 @@ def create_ui(input_audio_max_duration, share=False, server_name: str = None, se
     if input_audio_max_duration > 0:
         ui_description += "\n\n" + "Max audio file length: " + str(input_audio_max_duration) + " s"
 
-    ui_article = "Read the [documentation here](https://huggingface.co/spaces/aadnk/whisper-webui/blob/main/docs/options.md)"
+    ui_article = "Read the [documentation here](https://gitlab.com/aadnk/whisper-webui/-/blob/main/docs/options.md)"
 
     demo = gr.Interface(fn=ui.transcribe_webui, description=ui_description, article=ui_article, inputs=[
         gr.Dropdown(choices=WHISPER_MODELS, value=default_model_name, label="Model"),
