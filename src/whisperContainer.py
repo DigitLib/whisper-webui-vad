@@ -23,6 +23,21 @@ class WhisperContainer:
                 self.model = self.cache.get(model_key, self._create_model)
         return self.model
 
+    def ensure_downloaded(self):
+        """
+        Ensure that the model is downloaded. This is useful if you want to ensure that the model is downloaded before
+        passing the container to a subprocess.
+        """
+        # Warning: Using private API here
+        try:
+            if self.model_name in whisper._MODELS:
+                whisper._download(whisper._MODELS[self.model_name], self.download_root, False)
+            return True
+        except Exception as e:
+            # Given that the API is private, it could change at any time. We don't want to crash the program
+            print("Error pre-downloading model: " + str(e))
+            return False
+    
     def _create_model(self):
         print("Loading whisper model " + self.model_name)
         return whisper.load_model(self.model_name, device=self.device, download_root=self.download_root)
