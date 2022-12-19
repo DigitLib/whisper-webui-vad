@@ -1,4 +1,5 @@
 # External programs
+import os
 import whisper
 
 from src.modelCache import GLOBAL_MODEL_CACHE, ModelCache
@@ -30,8 +31,13 @@ class WhisperContainer:
         """
         # Warning: Using private API here
         try:
+            root_dir = self.download_root
+
+            if root_dir is None:
+                root_dir = os.path.join(os.path.expanduser("~"), ".cache", "whisper")
+
             if self.model_name in whisper._MODELS:
-                whisper._download(whisper._MODELS[self.model_name], self.download_root, False)
+                whisper._download(whisper._MODELS[self.model_name], root_dir, False)
             return True
         except Exception as e:
             # Given that the API is private, it could change at any time. We don't want to crash the program
