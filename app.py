@@ -336,7 +336,7 @@ class WhisperTranscriber:
 
 def create_ui(input_audio_max_duration, share=False, server_name: str = None, server_port: int = 7860, 
               default_model_name: str = "medium", default_vad: str = None,vad_parallel_devices: str = None,
-              vad_process_timeout: float = None, vad_cpu_cores: int = 1, auto_parallel: bool = False
+              vad_process_timeout: float = None, vad_cpu_cores: int = 1, auto_parallel: bool = False,
               output_dir: str = None):
     ui = WhisperTranscriber(input_audio_max_duration, vad_process_timeout, vad_cpu_cores, DELETE_UPLOADED_FILES, output_dir)
 
