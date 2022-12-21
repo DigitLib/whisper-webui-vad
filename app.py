@@ -72,6 +72,7 @@ class WhisperTranscriber:
         self.vad_model = None
         self.inputAudioMaxDuration = input_audio_max_duration
         self.deleteUploadedFiles = delete_uploaded_files
+        self.output_dir = output_dir
 
     def set_parallel_devices(self, vad_parallel_devices: str):
         self.parallel_device_list = [ device.strip() for device in vad_parallel_devices.split(",") ] if vad_parallel_devices else None
