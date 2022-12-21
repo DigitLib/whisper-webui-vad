@@ -384,7 +384,7 @@ if __name__ == '__main__':
     parser.add_argument("--share", type=bool, default=False, help="True to share the app on HuggingFace.")
     parser.add_argument("--server_name", type=str, default=None, help="The host or IP to bind to. If None, bind to localhost.")
     parser.add_argument("--server_port", type=int, default=7860, help="The port to bind to.")
-    parser.add_argument("--default_model_name", type=str, choises=WHISPER_MODELS, default="medium", help="The default model name.")
+    parser.add_argument("--default_model_name", type=str, choices=WHISPER_MODELS, default="medium", help="The default model name.")
     parser.add_argument("--default_vad", type=str, default="silero-vad", help="The default VAD.")
     parser.add_argument("--vad_parallel_devices", type=str, default="", help="A commma delimited list of CUDA devices to use for parallel processing. If None, disable parallel processing.")
     parser.add_argument("--vad_cpu_cores", type=int, default=1, help="The number of CPU cores to use for VAD pre-processing.")
