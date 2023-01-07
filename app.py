@@ -8,6 +8,7 @@ import os
 import pathlib
 import tempfile
 import zipfile
+import numpy as np
 
 import torch
 from src.modelCache import ModelCache
@@ -85,7 +86,29 @@ class WhisperTranscriber:
             self.vad_cpu_cores = min(os.cpu_count(), MAX_AUTO_CPU_CORES)
             print("[Auto parallel] Using GPU devices " + str(self.parallel_device_list) + " and " + str(self.vad_cpu_cores) + " CPU cores for VAD/transcription.")
 
-    def transcribe_webui(self, modelName, languageName, urlData, multipleFile, microphoneData, task, vad, vadMergeWindow, vadMaxMergeSize, vadPadding, vadPromptWindow):
+    # Entry function for the simple tab
+    def transcribe_webui_simple(self, modelName, languageName, urlData, multipleFiles, microphoneData, task, vad, vadMergeWindow, vadMaxMergeSize, vadPadding, vadPromptWindow):
+        return self.transcribe_webui(modelName, languageName, urlData, multipleFiles, microphoneData, task, vad, vadMergeWindow, vadMaxMergeSize, vadPadding, vadPromptWindow)
+
+    # Entry function for the full tab
+    def transcribe_webui_full(self, modelName, languageName, urlData, multipleFiles, microphoneData, task, vad, vadMergeWindow, vadMaxMergeSize, vadPadding, vadPromptWindow, 
+                                    initial_prompt: str, temperature: float, best_of: int, beam_size: int, patience: float, length_penalty: float, suppress_tokens: str, 
+                                    condition_on_previous_text: bool, fp16: bool, temperature_increment_on_fallback: float, 
+                                    compression_ratio_threshold: float, logprob_threshold: float, no_speech_threshold: float):
+
+        # Handle temperature_increment_on_fallback
+        if temperature_increment_on_fallback is not None:
+            temperature = tuple(np.arange(temperature, 1.0 + 1e-6, temperature_increment_on_fallback))
+        else:
+            temperature = [temperature]
+
+        return self.transcribe_webui(modelName, languageName, urlData, multipleFiles, microphoneData, task, vad, vadMergeWindow, vadMaxMergeSize, vadPadding, vadPromptWindow, 
+                                     initial_prompt=initial_prompt, temperature=temperature, best_of=best_of, beam_size=beam_size, patience=patience, length_penalty=length_penalty, suppress_tokens=suppress_tokens,
+                                     condition_on_previous_text=condition_on_previous_text, fp16=fp16,
+                                     compression_ratio_threshold=compression_ratio_threshold, logprob_threshold=logprob_threshold, no_speech_threshold=no_speech_threshold)
+
+    def transcribe_webui(self, modelName, languageName, urlData, multipleFiles, microphoneData, task, vad, vadMergeWindow, vadMaxMergeSize, vadPadding, vadPromptWindow, **decodeOptions: dict):
+
         try:
             sources = self.__get_source(urlData, multipleFile, microphoneData)
             
@@ -119,7 +142,7 @@ class WhisperTranscriber:
                         print("Transcribing ", source.source_path)
 
                     # Transcribe
-                    result = self.transcribe_file(model, source.source_path, selectedLanguage, task, vad, vadMergeWindow, vadMaxMergeSize, vadPadding, vadPromptWindow)
+                    result = self.transcribe_file(model, source.source_path, selectedLanguage, task, vad, vadMergeWindow, vadMaxMergeSize, vadPadding, vadPromptWindow, **decodeOptions)
                     filePrefix = slugify(source_prefix + source.get_short_name(), allow_unicode=True)
 
                     source_download, source_text, source_vtt = self.write_result(result, filePrefix, outputDirectory)
@@ -356,7 +379,7 @@ def create_ui(input_audio_max_duration, share=False, server_name: str = None, se
 
     ui_article = "Read the [documentation here](https://gitlab.com/aadnk/whisper-webui/-/blob/main/docs/options.md)"
 
-    demo = gr.Interface(fn=ui.transcribe_webui, description=ui_description, article=ui_article, inputs=[
+    simple_inputs = lambda : [
         gr.Dropdown(choices=WHISPER_MODELS, value=default_model_name, label="Model"),
         gr.Dropdown(choices=sorted(LANGUAGES), label="Language"),
         gr.Text(label="URL (YouTube, etc.)"),
@@ -368,11 +391,38 @@ def create_ui(input_audio_max_duration, share=False, server_name: str = None, se
         gr.Number(label="VAD - Max Merge Size (s)", precision=0, value=30),
         gr.Number(label="VAD - Padding (s)", precision=None, value=1),
         gr.Number(label="VAD - Prompt Window (s)", precision=None, value=3)
+     ]
+
+    simple_transcribe = gr.Interface(fn=ui.transcribe_webui_simple, description=ui_description, article=ui_article, inputs=simple_inputs(), outputs=[
+        gr.File(label="Download"),
+        gr.Text(label="Transcription"), 
+        gr.Text(label="Segments")
+    ])
+
+    full_description = ui_description + "\n\n\n\n" + "Be careful when changing some of the options in the full interface - this can cause the model to crash."
+
+    full_transcribe = gr.Interface(fn=ui.transcribe_webui_full, description=full_description, article=ui_article, inputs=[
+        *simple_inputs(),
+        gr.TextArea(label="Initial Prompt"),
+        gr.Number(label="Temperature", value=0),
+        gr.Number(label="Best Of - Non-zero temperature", value=5, precision=0),
+        gr.Number(label="Beam Size - Zero temperature", value=5, precision=0),
+        gr.Number(label="Patience - Zero temperature", value=None),
+        gr.Number(label="Length Penalty - Any temperature", value=None), 
+        gr.Text(label="Suppress Tokens - Comma-separated list of token IDs", value="-1"),
+        gr.Checkbox(label="Condition on previous text", value=True),
+        gr.Checkbox(label="FP16", value=True),
+        gr.Number(label="Temperature increment on fallback", value=0.2),
+        gr.Number(label="Compression ratio threshold", value=2.4),
+        gr.Number(label="Logprob threshold", value=-1.0),
+        gr.Number(label="No speech threshold", value=0.6)
     ], outputs=[
         gr.File(label="Download"),
         gr.Text(label="Transcription"), 
         gr.Text(label="Segments")
     ])
+    
+    demo = gr.TabbedInterface([simple_transcribe, full_transcribe], tab_names=["Simple", "Full"])
 
     demo.launch(share=share, server_name=server_name, server_port=server_port)
     
