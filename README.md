@@ -21,7 +21,7 @@ If you want to use the lates Whisper use the original repo.
 \
 Check out the configuration reference at https://huggingface.co/docs/hub/spaces-config-reference
 
-# Running Locally (not tested yet)
+# Running Locally
 
 To run this program locally, first install Python 3.9+ and Git. Then install Pytorch 10.1+ and all the other dependencies:
 ```
