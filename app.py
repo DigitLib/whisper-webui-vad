@@ -108,9 +108,8 @@ class WhisperTranscriber:
                                      compression_ratio_threshold=compression_ratio_threshold, logprob_threshold=logprob_threshold, no_speech_threshold=no_speech_threshold)
 
     def transcribe_webui(self, modelName, languageName, urlData, multipleFiles, microphoneData, task, vad, vadMergeWindow, vadMaxMergeSize, vadPadding, vadPromptWindow, **decodeOptions: dict):
-
         try:
-            sources = self.__get_source(urlData, multipleFile, microphoneData)
+            sources = self.__get_source(urlData, multipleFiles, microphoneData)
             
             try:
                 selectedLanguage = languageName.lower() if len(languageName) > 0 else None
@@ -118,7 +117,7 @@ class WhisperTranscriber:
 
                 model = WhisperContainer(model_name=selectedModel, cache=self.model_cache)
 
-               # Result
+                # Result
                 download = []
                 zip_file_lookup = {}
                 text = ""
@@ -128,7 +127,6 @@ class WhisperTranscriber:
                 downloadDirectory = tempfile.mkdtemp()
                 
                 source_index = 0
-
                 outputDirectory = self.output_dir if self.output_dir is not None else downloadDirectory
                 
                 # Execute whisper
@@ -243,7 +241,7 @@ class WhisperTranscriber:
                 result = self.process_vad(audio_path, whisperCallable, periodic_vad, period_config)
             else:
                 # Default VAD
-                result = whisperCallable(audio_path, 0, None, None)
+                result = whisperCallable.invoke(audio_path, 0, None, None)
 
         return result
 
@@ -350,6 +348,7 @@ class WhisperTranscriber:
         return file.name
 
     def close(self):
+        print("Closing parallel contexts")
         self.clear_cache()
 
         if (self.gpu_parallel_context is not None):
@@ -359,8 +358,8 @@ class WhisperTranscriber:
 
 
 def create_ui(input_audio_max_duration, share=False, server_name: str = None, server_port: int = 7860, 
-              default_model_name: str = "medium", default_vad: str = None,vad_parallel_devices: str = None,
-              vad_process_timeout: float = None, vad_cpu_cores: int = 1, auto_parallel: bool = False,
+              default_model_name: str = "medium", default_vad: str = None, vad_parallel_devices: str = None, 
+              vad_process_timeout: float = None, vad_cpu_cores: int = 1, auto_parallel: bool = False, 
               output_dir: str = None):
     ui = WhisperTranscriber(input_audio_max_duration, vad_process_timeout, vad_cpu_cores, DELETE_UPLOADED_FILES, output_dir)
 
