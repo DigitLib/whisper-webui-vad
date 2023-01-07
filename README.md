@@ -12,7 +12,7 @@ Using this OpenAI Whisper fork for low VRAM memory to use a large image on 8GB G
 [whisper-for-low-vram](https://github.com/ProjectEGU/whisper-for-low-vram/tree/main/whisper) 
 
 ## Note
-This is tested with Docker and work fine with 8GB GPU and large whisper image.\
+This is tested work fine with 8GB GPU and large-v2 whisper image.\
 Work very fine with non English languages (tested Serbian).
 
 If you want to use the lates Whisper use the original repo.
@@ -28,9 +28,9 @@ To run this program locally, first install Python 3.9+ and Git. Then install Pyt
 pip install -r requirements.txt
 ```
 
-Finally, run the full version (no audio length restrictions) of the app:
+Finally, run the full version (no audio length restrictions) of the app with parallel CPU/GPU enabled:
 ```
-python app-full.py
+python app.py --input_audio_max_duration -1 --server_name 127.0.0.1 --auto_parallel True
 ```
 
 You can also run the CLI interface, which is similar to Whisper's own CLI but also supports the following additional arguments:
@@ -42,6 +42,7 @@ python cli.py \
 [--vad_padding VAD_PADDING] \
 [--vad_prompt_window VAD_PROMPT_WINDOW]
 [--vad_parallel_devices COMMA_DELIMITED_DEVICES]
+[--auto_parallel BOOLEAN]
 ```
 In addition, you may also use URL's in addition to file paths as input.
 ```
