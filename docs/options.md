@@ -1,4 +1,4 @@
-# Options
+# Standard Options
 To transcribe or translate an audio file, you can either copy an URL from a website (all [websites](https://github.com/yt-dlp/yt-dlp/blob/master/supportedsites.md) 
 supported by YT-DLP will work, including YouTube). Otherwise, upload an audio file (choose "All Files (*.*)" 
 in the file selector to select any file type, including video files) or use the microphone.
@@ -86,3 +86,51 @@ Note that detected lines in gaps between speech sections will not be included in
 
 Both `app.py` and `cli.py` also accept command line options, such as the ability to enable parallel execution on multiple
 CPU/GPU cores, the default model name/VAD and so on. Consult the README in the root folder for more information.
+
+# Additional Options
+
+In addition to the above, there's also a "Full" options interface that allows you to set all the options available in the Whisper 
+model. The options are as follows:
+
+## Initial Prompt
+Optional text to provide as a prompt for the first 30 seconds window. Whisper will attempt to use this as a starting point for the transcription, but you can
+also get creative and specify a style or format for the output of the transcription.
+
+For instance, if you use the prompt "hello how is it going always use lowercase no punctuation goodbye one two three start stop i you me they", Whisper will 
+be biased to output lower capital letters and no punctuation, and may also be biased to output the words in the prompt more often.
+
+## Temperature
+The temperature to use when sampling. Default is 0 (zero). A higher temperature will result in more random output, while a lower temperature will be more deterministic.
+
+## Best Of - Non-zero temperature
+The number of candidates to sample from when sampling with non-zero temperature. Default is 5.
+
+## Beam Size - Zero temperature
+The number of beams to use in beam search when sampling with zero temperature. Default is 5.
+
+## Patience - Zero temperature
+The patience value to use in beam search when sampling with zero temperature. As in https://arxiv.org/abs/2204.05424, the default (1.0) is equivalent to conventional beam search.
+
+## Length Penalty - Any temperature
+The token length penalty coefficient (alpha) to use when sampling with any temperature. As in https://arxiv.org/abs/1609.08144, uses simple length normalization by default.
+
+## Suppress Tokens - Comma-separated list of token IDs
+A comma-separated list of token IDs to suppress during sampling. The default value of "-1" will suppress most special characters except common punctuations.
+
+## Condition on previous text
+If True, provide the previous output of the model as a prompt for the next window. Disabling this may make the text inconsistent across windows, but the model becomes less prone to getting stuck in a failure loop.
+
+## FP16
+Whether to perform inference in fp16. True by default.
+
+## Temperature increment on fallback
+The temperature to increase when falling back when the decoding fails to meet either of the thresholds below. Default is 0.2.
+
+## Compression ratio threshold
+If the gzip compression ratio is higher than this value, treat the decoding as failed. Default is 2.4.
+
+## Logprob threshold
+If the average log probability is lower than this value, treat the decoding as failed. Default is -1.0.
+
+## No speech threshold
+If the probability of the <|nospeech|> token is higher than this value AND the decoding has failed due to `logprob_threshold`, consider the segment as silence. Default is 0.6.
