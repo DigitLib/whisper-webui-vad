@@ -58,7 +58,7 @@ LANGUAGES = [
  "Hausa", "Bashkir", "Javanese", "Sundanese"
 ]
 
-WHISPER_MODELS = ["tiny", "base", "small", "medium", "large", "large-v1", "large-v2"]
+WHISPER_MODELS = ["tiny", "base", "small", "medium", "large", "large-v1", "large-v2", "large-v2-sr"]
 
 class WhisperTranscriber:
     def __init__(self, input_audio_max_duration: float = DEFAULT_INPUT_AUDIO_MAX_DURATION, vad_process_timeout: float = None,
