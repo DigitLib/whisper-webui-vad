@@ -1,4 +1,4 @@
-https://github.com/DigitLib/whisper-for-low-vram-sr.git
+git+https://github.com/DigitLib/whisper-for-low-vram-sr.git
 transformers
 ffmpeg-python==0.2.0
 gradio==3.13.0
