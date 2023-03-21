@@ -12,7 +12,7 @@ Using this OpenAI Whisper fork for low VRAM memory to use a large image on 8GB G
 [whisper-for-low-vram](https://github.com/ProjectEGU/whisper-for-low-vram/tree/main/whisper) 
 
 Update: Added Fine Tuned Serbian large-v2 Whisper model, named large-v2-sr\
-Repo: [whisper-for-low-vram-sr](https://github.com/DigitLib/whisper-for-low-vram-sr/whisper) 
+Repo: [whisper-for-low-vram-sr](https://github.com/DigitLib/whisper-for-low-vram-sr) 
 
 ## Note
 This is tested work fine with 8GB GPU and large-v2 whisper image.\
