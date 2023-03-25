@@ -11,12 +11,11 @@ Found on https://github.com/openai/whisper/discussions/397
 Using this OpenAI Whisper fork for low VRAM memory to use a large image on 8GB GRPU.\
 [whisper-for-low-vram](https://github.com/ProjectEGU/whisper-for-low-vram/tree/main/whisper) 
 
-
 ## Note
 This is tested with Docker and work fine with 8GB GPU and large whisper image.\
 Work very fine with non English languages (tested Serbian).
 
-If you want to use the lates Whisper use the original repo.
+If you want to use the latest Whisper use the original repo.
 
 ---
 \
@@ -53,6 +52,9 @@ In addition, you may also use URL's in addition to file paths as input.
 ```
 python cli.py --model large --vad silero-vad --language Japanese "https://www.youtube.com/watch?v=4cICErqqRSM"
 ```
+
+Rather than supplying arguments to `app.py` or `cli.py`, you can also use the configuration file [config.json5](config.json5). See that file for more information. 
+If you want to use a different configuration file, you can use the `WHISPER_WEBUI_CONFIG` environment variable to specify the path to another file.
 
 ## Google Colab
 
@@ -99,8 +101,7 @@ python app.py --input_audio_max_duration -1 --auto_parallel True
 
 You can upload multiple files either through the "Upload files" option, or as a playlist on YouTube. 
 Each audio file will then be processed in turn, and the resulting SRT/VTT/Transcript will be made available in the "Download" section. 
-When more than one file is processed, the UI will also generate a "All_Output" zip file containing all the text output files
-
+When more than one file is processed, the UI will also generate a "All_Output" zip file containing all the text output files.
 
 # Docker
 
@@ -146,7 +147,8 @@ You can also call `cli.py` the same way:
 ```
 docker run --gpus all \
 --mount type=bind,source=/home/administrator/.cache/whisper,target=/root/.cache/whisper \
---mount type=bind,source=${PWD},target=/app/data \ whisper-webui:1 \
+--mount type=bind,source=${PWD},target=/app/data \
+registry.gitlab.com/aadnk/whisper-webui:latest \
 cli.py --model large --auto_parallel True --vad silero-vad \
 --output_dir /app/data /app/data/YOUR-FILE-HERE.mp4
 ```

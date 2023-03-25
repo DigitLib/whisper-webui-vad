@@ -27,11 +27,7 @@ from src.utils import slugify, write_srt, write_vtt
 from src.vad import AbstractTranscription, NonSpeechStrategy, PeriodicTranscriptionConfig, TranscriptionConfig, VadPeriodicTranscription, VadSileroTranscription
 from src.whisperContainer import WhisperContainer
 
-# Limitations (set to -1 to disable)
-DEFAULT_INPUT_AUDIO_MAX_DURATION = 600 # seconds
-
-# Whether or not to automatically delete all uploaded files, to save disk space
-DELETE_UPLOADED_FILES = True
+# Configure more application defaults in config.json5
 
 # Gradio seems to truncate files without keeping the extension, so we need to truncate the file prefix ourself 
 MAX_FILE_PREFIX_LENGTH = 17
@@ -62,8 +58,8 @@ LANGUAGES = [
 WHISPER_MODELS = ["tiny", "base", "small", "medium", "large", "large-v1", "large-v2"]
 
 class WhisperTranscriber:
-    def __init__(self, input_audio_max_duration: float = DEFAULT_INPUT_AUDIO_MAX_DURATION, vad_process_timeout: float = None, 
-                 vad_cpu_cores: int = 1, delete_uploaded_files: bool = DELETE_UPLOADED_FILES, output_dir: str = None, 
+    def __init__(self, input_audio_max_duration: float = None, vad_process_timeout: float = None, 
+                 vad_cpu_cores: int = 1, delete_uploaded_files: bool = False, output_dir: str = None, 
                  app_config: ApplicationConfig = None):
         self.model_cache = ModelCache()
         self.parallel_device_list = None
@@ -361,15 +357,13 @@ class WhisperTranscriber:
             self.cpu_parallel_context.close()
 
 
-def create_ui(input_audio_max_duration, share=False, server_name: str = None, server_port: int = 7860, 
-              default_model_name: str = "medium", default_vad: str = None, vad_parallel_devices: str = None, 
-              vad_process_timeout: float = None, vad_cpu_cores: int = 1, auto_parallel: bool = False, 
-              output_dir: str = None, app_config: ApplicationConfig = None):
-    ui = WhisperTranscriber(input_audio_max_duration, vad_process_timeout, vad_cpu_cores, DELETE_UPLOADED_FILES, output_dir, app_config)
+def create_ui(app_config: ApplicationConfig):
+    ui = WhisperTranscriber(app_config.input_audio_max_duration, app_config.vad_process_timeout, app_config.vad_cpu_cores, 
+                            app_config.delete_uploaded_files, app_config.output_dir, app_config)
 
     # Specify a list of devices to use for parallel processing
-    ui.set_parallel_devices(vad_parallel_devices)
-    ui.set_auto_parallel(auto_parallel)
+    ui.set_parallel_devices(app_config.vad_parallel_devices)
+    ui.set_auto_parallel(app_config.auto_parallel)
 
     ui_description = "Whisper is a general-purpose speech recognition model. It is trained on a large dataset of diverse " 
     ui_description += " audio and is also a multi-task model that can perform multilingual speech recognition "
@@ -377,25 +371,25 @@ def create_ui(input_audio_max_duration, share=False, server_name: str = None, se
 
     ui_description += "\n\n\n\nFor longer audio files (>10 minutes) not in English, it is recommended that you select Silero VAD (Voice Activity Detector) in the VAD option."
 
-    if input_audio_max_duration > 0:
-        ui_description += "\n\n" + "Max audio file length: " + str(input_audio_max_duration) + " s"
+    if app_config.input_audio_max_duration > 0:
+        ui_description += "\n\n" + "Max audio file length: " + str(app_config.input_audio_max_duration) + " s"
 
     ui_article = "Read the [documentation here](https://gitlab.com/aadnk/whisper-webui/-/blob/main/docs/options.md)"
 
     whisper_models = app_config.get_model_names()
 
     simple_inputs = lambda : [
-        gr.Dropdown(choices=whisper_models, value=default_model_name, label="Model"),
-        gr.Dropdown(choices=sorted(LANGUAGES), label="Language"),
+        gr.Dropdown(choices=whisper_models, value=app_config.default_model_name, label="Model"),
+        gr.Dropdown(choices=sorted(LANGUAGES), label="Language", value=app_config.language),
         gr.Text(label="URL (YouTube, etc.)"),
         gr.File(label="Upload Files", file_count="multiple"),
         gr.Audio(source="microphone", type="filepath", label="Microphone Input"),
-        gr.Dropdown(choices=["transcribe", "translate"], label="Task"),
-        gr.Dropdown(choices=["none", "silero-vad", "silero-vad-skip-gaps", "silero-vad-expand-into-gaps", "periodic-vad"], value=default_vad, label="VAD"),
-        gr.Number(label="VAD - Merge Window (s)", precision=0, value=5),
-        gr.Number(label="VAD - Max Merge Size (s)", precision=0, value=30),
-        gr.Number(label="VAD - Padding (s)", precision=None, value=1),
-        gr.Number(label="VAD - Prompt Window (s)", precision=None, value=3)
+        gr.Dropdown(choices=["transcribe", "translate"], label="Task", value=app_config.task),
+        gr.Dropdown(choices=["none", "silero-vad", "silero-vad-skip-gaps", "silero-vad-expand-into-gaps", "periodic-vad"], value=app_config.default_vad, label="VAD"),
+        gr.Number(label="VAD - Merge Window (s)", precision=0, value=app_config.vad_merge_window),
+        gr.Number(label="VAD - Max Merge Size (s)", precision=0, value=app_config.vad_max_merge_size),
+        gr.Number(label="VAD - Padding (s)", precision=None, value=app_config.vad_padding),
+        gr.Number(label="VAD - Prompt Window (s)", precision=None, value=app_config.vad_prompt_window),
     ]
 
     simple_transcribe = gr.Interface(fn=ui.transcribe_webui_simple, description=ui_description, article=ui_article, inputs=simple_inputs(), outputs=[
@@ -409,18 +403,18 @@ def create_ui(input_audio_max_duration, share=False, server_name: str = None, se
     full_transcribe = gr.Interface(fn=ui.transcribe_webui_full, description=full_description, article=ui_article, inputs=[
         *simple_inputs(),
         gr.TextArea(label="Initial Prompt"),
-        gr.Number(label="Temperature", value=0),
-        gr.Number(label="Best Of - Non-zero temperature", value=5, precision=0),
-        gr.Number(label="Beam Size - Zero temperature", value=5, precision=0),
-        gr.Number(label="Patience - Zero temperature", value=None),
-        gr.Number(label="Length Penalty - Any temperature", value=None), 
-        gr.Text(label="Suppress Tokens - Comma-separated list of token IDs", value="-1"),
-        gr.Checkbox(label="Condition on previous text", value=True),
-        gr.Checkbox(label="FP16", value=True),
-        gr.Number(label="Temperature increment on fallback", value=0.2),
-        gr.Number(label="Compression ratio threshold", value=2.4),
-        gr.Number(label="Logprob threshold", value=-1.0),
-        gr.Number(label="No speech threshold", value=0.6)
+        gr.Number(label="Temperature", value=app_config.temperature),
+        gr.Number(label="Best Of - Non-zero temperature", value=app_config.best_of, precision=0),
+        gr.Number(label="Beam Size - Zero temperature", value=app_config.beam_size, precision=0),
+        gr.Number(label="Patience - Zero temperature", value=app_config.patience),
+        gr.Number(label="Length Penalty - Any temperature", value=app_config.length_penalty), 
+        gr.Text(label="Suppress Tokens - Comma-separated list of token IDs", value=app_config.suppress_tokens),
+        gr.Checkbox(label="Condition on previous text", value=app_config.condition_on_previous_text),
+        gr.Checkbox(label="FP16", value=app_config.fp16),
+        gr.Number(label="Temperature increment on fallback", value=app_config.temperature_increment_on_fallback),
+        gr.Number(label="Compression ratio threshold", value=app_config.compression_ratio_threshold),
+        gr.Number(label="Logprob threshold", value=app_config.logprob_threshold),
+        gr.Number(label="No speech threshold", value=app_config.no_speech_threshold)
     ], outputs=[
         gr.File(label="Download"),
         gr.Text(label="Transcription"), 
@@ -429,13 +423,17 @@ def create_ui(input_audio_max_duration, share=False, server_name: str = None, se
 
     demo = gr.TabbedInterface([simple_transcribe, full_transcribe], tab_names=["Simple", "Full"])
 
-    demo.launch(share=share, server_name=server_name, server_port=server_port)
+    # Queue up the demo
+    if app_config.queue_concurrency_count is not None and app_config.queue_concurrency_count > 0:
+        demo.queue(concurrency_count=app_config.queue_concurrency_count)
+   
+    demo.launch(share=app_config.share, server_name=app_config.server_name, server_port=app_config.server_port)
     
     # Clean up
     ui.close()
 
 if __name__ == '__main__':
-    app_config = ApplicationConfig.parse_file(os.environ.get("WHISPER_WEBUI_CONFIG", "config.json5"))
+    app_config = ApplicationConfig.create_default()
     whisper_models = app_config.get_model_names()
 
     parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
@@ -447,6 +445,8 @@ if __name__ == '__main__':
                         help="The host or IP to bind to. If None, bind to localhost.") # None
     parser.add_argument("--server_port", type=int, default=app_config.server_port, \
                         help="The port to bind to.") # 7860
+    parser.add_argument("--queue_concurrency_count", type=int, default=app_config.queue_concurrency_count, \
+                        help="The number of concurrent requests to process.") # 1
     parser.add_argument("--default_model_name", type=str, choices=whisper_models, default=app_config.default_model_name, \
                         help="The default model name.") # medium
     parser.add_argument("--default_vad", type=str, default=app_config.default_vad, \
@@ -463,4 +463,6 @@ if __name__ == '__main__':
                         help="directory to save the outputs") # None
 
     args = parser.parse_args().__dict__
-    create_ui(app_config=app_config, **args)
+
+    updated_config = app_config.update(**args)
+    create_ui(app_config=updated_config)
