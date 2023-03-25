@@ -1,0 +1,70 @@
+{
+    "models": [
+        // Configuration for the built-in models. You can remove any of these 
+        // if you don't want to use the default models.
+        {
+            "name": "tiny",
+            "url": "tiny" 
+        },
+        {
+            "name": "base",
+            "url": "base"
+        },
+        {
+            "name": "small",
+            "url": "small"
+        },
+        {
+            "name": "medium",
+            "url": "medium"
+        },
+        {
+            "name": "large",
+            "url": "large"
+        },
+        {
+            "name": "large-v2",
+            "url": "large-v2"
+        },
+        // Uncomment to add custom Japanese models
+        {
+            "name": "whisper-large-v2-serbian",
+            "url": "DrishtiSharma/whisper-large-v2-serbian",
+            // The type of the model. Can be "huggingface" or "whisper" - "whisper" is the default.
+            // HuggingFace models are loaded using the HuggingFace transformers library and then converted to Whisper models.
+            "type": "huggingface",
+        },
+        //{
+        //    "name": "local-model",
+        //    "url": "path/to/local/model",
+        //},
+        //{
+        //    "name": "remote-model",
+        //    "url": "https://example.com/path/to/model",
+        //}
+    ],
+    // Configuration options that will be used if they are not specified in the command line arguments.
+
+    // Maximum audio file length in seconds, or -1 for no limit.
+    "input_audio_max_duration": 600,
+    // True to share the app on HuggingFace.
+    "share": false,
+    // The host or IP to bind to. If None, bind to localhost.
+    "server_name": null,
+    // The port to bind to.
+    "server_port": 7860,
+    // The default model name.
+    "default_model_name": "medium",
+    // The default VAD.
+    "default_vad": "silero-vad",
+    // A commma delimited list of CUDA devices to use for parallel processing. If None, disable parallel processing.
+    "vad_parallel_devices": "",
+    // The number of CPU cores to use for VAD pre-processing.
+    "vad_cpu_cores": 1,
+    // The number of seconds before inactivate processes are terminated. Use 0 to close processes immediately, or None for no timeout.
+    "vad_process_timeout": 1800,
+    // True to use all available GPUs and CPU cores for processing. Use vad_cpu_cores/vad_parallel_devices to specify the number of CPU cores/GPUs to use.
+    "auto_parallel": false,
+    // Directory to save the outputs
+    "output_dir": null
+}

@@ -82,7 +82,7 @@ class AbstractTranscription(ABC):
         Determine if get_transcribe_timestamps is fast enough to not need parallelization.
         """
         return False
-    
+
     @abstractmethod
     def get_transcribe_timestamps(self, audio: str, config: TranscriptionConfig, start_time: float, end_time: float):
         """
@@ -471,7 +471,7 @@ class VadPeriodicTranscription(AbstractTranscription):
     def is_transcribe_timestamps_fast(self):
         # This is a very fast VAD - no need to parallelize it
         return True
-    
+
     def get_transcribe_timestamps(self, audio: str, config: PeriodicTranscriptionConfig, start_time: float, end_time: float):
         result = []
 

@@ -1,11 +1,14 @@
 # External programs
 import os
+from typing import List
 import whisper
+from src.config import ModelConfig
 
 from src.modelCache import GLOBAL_MODEL_CACHE, ModelCache
 
 class WhisperContainer:
-    def __init__(self, model_name: str, device: str = None, download_root: str = None, cache: ModelCache = None):
+    def __init__(self, model_name: str, device: str = None, download_root: str = None, 
+                 cache: ModelCache = None, models: List[ModelConfig] = []):
         self.model_name = model_name
         self.device = device
         self.download_root = download_root
@@ -13,6 +16,9 @@ class WhisperContainer:
 
         # Will be created on demand
         self.model = None
+
+        # List of known models
+        self.models = models
     
     def get_model(self):
         if self.model is None:
@@ -32,21 +38,40 @@ class WhisperContainer:
         # Warning: Using private API here
         try:
             root_dir = self.download_root
+            model_config = self.get_model_config()
 
             if root_dir is None:
                 root_dir = os.path.join(os.path.expanduser("~"), ".cache", "whisper")
 
             if self.model_name in whisper._MODELS:
                 whisper._download(whisper._MODELS[self.model_name], root_dir, False)
+            else:
+                # If the model is not in the official list, see if it needs to be downloaded
+                model_config.download_url(root_dir)
             return True
+        
         except Exception as e:
             # Given that the API is private, it could change at any time. We don't want to crash the program
             print("Error pre-downloading model: " + str(e))
             return False
-    
+
+    def get_model_config(self) -> ModelConfig:
+        """
+        Get the model configuration for the model.
+        """
+        for model in self.models:
+            if model.name == self.model_name:
+                return model
+        return None
+
     def _create_model(self):
         print("Loading whisper model " + self.model_name)
-        return whisper.load_model(self.model_name, device=self.device, download_root=self.download_root)
+        
+        model_config = self.get_model_config()
+        # Note that the model will not be downloaded in the case of an official Whisper model
+        model_path = model_config.download_url(self.download_root)
+
+        return whisper.load_model(model_path, device=self.device, download_root=self.download_root)
 
     def create_callback(self, language: str = None, task: str = None, initial_prompt: str = None, **decodeOptions: dict):
         """
@@ -71,12 +96,13 @@ class WhisperContainer:
 
     # This is required for multiprocessing
     def __getstate__(self):
-        return { "model_name": self.model_name, "device": self.device, "download_root": self.download_root }
+        return { "model_name": self.model_name, "device": self.device, "download_root": self.download_root, "models": self.models }
 
     def __setstate__(self, state):
         self.model_name = state["model_name"]
         self.device = state["device"]
         self.download_root = state["download_root"]
+        self.models = state["models"]
         self.model = None
         # Depickled objects must use the global cache
         self.cache = GLOBAL_MODEL_CACHE

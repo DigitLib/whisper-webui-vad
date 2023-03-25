@@ -11,11 +11,9 @@ Found on https://github.com/openai/whisper/discussions/397
 Using this OpenAI Whisper fork for low VRAM memory to use a large image on 8GB GRPU.\
 [whisper-for-low-vram](https://github.com/ProjectEGU/whisper-for-low-vram/tree/main/whisper) 
 
-Update: Added Fine Tuned Serbian large-v2 Whisper model, named large-v2-sr\
-Repo: [whisper-for-low-vram-sr](https://github.com/DigitLib/whisper-for-low-vram-sr) 
 
 ## Note
-This is tested work fine with 8GB GPU and large-v2 whisper image.\
+This is tested with Docker and work fine with 8GB GPU and large whisper image.\
 Work very fine with non English languages (tested Serbian).
 
 If you want to use the lates Whisper use the original repo.
@@ -47,6 +45,7 @@ python cli.py \
 [--vad_max_merge_size VAD_MAX_MERGE_SIZE] \
 [--vad_padding VAD_PADDING] \
 [--vad_prompt_window VAD_PROMPT_WINDOW]
+[--vad_cpu_cores NUMBER_OF_CORES]
 [--vad_parallel_devices COMMA_DELIMITED_DEVICES]
 [--auto_parallel BOOLEAN]
 ```
